@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications';
+import { SchedulableTriggerInputTypes } from 'expo-notifications';
 import { create } from 'zustand';
 
 export interface Todo {
@@ -70,7 +71,13 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
         body: todo.text,
         data: { todoId: todo.id },
       },
-      trigger,
+      trigger: {
+        type: SchedulableTriggerInputTypes.CALENDAR,
+        year: trigger.getFullYear(),
+        month: trigger.getMonth(),
+        day: trigger.getDate(),
+        hour: trigger.getHours(),
+      },
     });
 
     return notificationId;
