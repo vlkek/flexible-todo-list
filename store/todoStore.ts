@@ -1,6 +1,18 @@
 import * as Notifications from 'expo-notifications';
 import { SchedulableTriggerInputTypes } from 'expo-notifications';
+import { Alert } from 'react-native';
 import { create } from 'zustand';
+
+// Настройка уведомлений
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 export interface Todo {
   id: string;
@@ -12,7 +24,7 @@ export interface Todo {
 
 interface TodoStore {
   todos: Todo[];
-  addTodo: (text: string, scheduledTime?: Date) => Promise<void>;
+  addTodo: (text: string, scheduledTime?: Date) => boolean;
   toggleTodo: (id: string) => void;
   deleteTodo: (id: string) => Promise<void>;
   scheduleNotification: (todo: Todo) => Promise<string>;
@@ -22,8 +34,21 @@ interface TodoStore {
 export const useTodoStore = create<TodoStore>((set, get) => ({
   todos: [],
   
-  addTodo: async (text: string, scheduledTime?: Date) => {
-    if (text.trim().length === 0) return;
+  addTodo: (text: string, scheduledTime?: Date) => {
+    const errors: string[] = [];
+    
+    if (text.trim().length === 0) {
+      errors.push('Введите текст задачи');
+    }
+
+    if (!scheduledTime) {
+      errors.push('Укажите время выполнения задачи');
+    }
+
+    if (errors.length > 0) {
+      Alert.alert('Заполните все поля', errors.join('\n'));
+      return false;
+    }
     
     const newTodo: Todo = {
       id: Date.now().toString(),
@@ -32,13 +57,14 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
       scheduledTime,
     };
 
-    if (scheduledTime) {
-      newTodo.notificationId = await get().scheduleNotification(newTodo);
-    }
-    
-    set((state) => ({
-      todos: [...state.todos, newTodo],
-    }));
+    get().scheduleNotification(newTodo).then(notificationId => {
+      newTodo.notificationId = notificationId;
+      set((state) => ({
+        todos: [...state.todos, newTodo],
+      }));
+    });
+
+    return true;
   },
 
   toggleTodo: (id: string) => {
@@ -64,19 +90,37 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
     if (!todo.scheduledTime) return '';
 
     const trigger = new Date(todo.scheduledTime);
+    const now = new Date();
+
+    if (trigger.getTime() <= now.getTime()) {
+      const notificationId = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: 'Напоминание о задаче',
+          body: todo.text,
+          data: { todoId: todo.id },
+          sound: true,
+          priority: Notifications.AndroidNotificationPriority.HIGH,
+        },
+        trigger: null,
+      });
+      return notificationId;
+    }
     
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
         title: 'Напоминание о задаче',
         body: todo.text,
         data: { todoId: todo.id },
+        sound: true,
+        priority: Notifications.AndroidNotificationPriority.HIGH,
       },
       trigger: {
         type: SchedulableTriggerInputTypes.CALENDAR,
         year: trigger.getFullYear(),
-        month: trigger.getMonth(),
+        month: trigger.getMonth() + 1,
         day: trigger.getDate(),
         hour: trigger.getHours(),
+        minute: trigger.getMinutes(),
       },
     });
 
