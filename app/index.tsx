@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   timeButton: {
-    width: 54,
+    minWidth: 54,
     height: 54,
     backgroundColor: '#e3f2fd',
     borderRadius: 27,
