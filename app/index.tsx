@@ -1,10 +1,11 @@
+import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useTodoStore } from '../store/todoStore';
+import { Animated, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Todo, useTodoStore } from '../store/todoStore';
 import { setupNotifications } from '../utils/notifications';
 
 export default function App() {
@@ -28,6 +29,63 @@ export default function App() {
     if (selectedDate) {
       setScheduledTime(selectedDate);
     }
+  };
+
+  const renderTodoItem = ({ item }: { item: Todo }) => {
+    const scaleAnim = new Animated.Value(1);
+
+    const handleToggle = () => {
+      Animated.sequence([
+        Animated.timing(scaleAnim, {
+          toValue: 0.95,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        toggleTodo(item.id);
+      });
+    };
+
+    return (
+      <Animated.View style={[styles.todoItem, { transform: [{ scale: scaleAnim }] }]}>
+        <TouchableOpacity
+          style={styles.todoCheckbox}
+          onPress={handleToggle}
+        >
+          <View style={[styles.checkbox, item.completed && styles.checkboxCompleted]}>
+            {item.completed && (
+              <Ionicons name="checkmark" size={16} color="#fff" />
+            )}
+          </View>
+        </TouchableOpacity>
+        <View style={styles.todoContent}>
+          <Text
+            style={[
+              styles.todoTextContent,
+              item.completed && styles.completedTodo,
+            ]}
+          >
+            {item.text}
+          </Text>
+          {item.scheduledTime && (
+            <Text style={styles.scheduledTime}>
+              {format(new Date(item.scheduledTime), 'HH:mm', { locale: ru })}
+            </Text>
+          )}
+        </View>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => deleteTodo(item.id)}
+        >
+          <Ionicons name="trash-outline" size={20} color="#FF3B30" />
+        </TouchableOpacity>
+      </Animated.View>
+    );
   };
 
   return (
@@ -69,34 +127,7 @@ export default function App() {
       <FlatList
         data={todos}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.todoItem}>
-            <TouchableOpacity
-              style={styles.todoText}
-              onPress={() => toggleTodo(item.id)}
-            >
-              <Text
-                style={[
-                  styles.todoTextContent,
-                  item.completed && styles.completedTodo,
-                ]}
-              >
-                {item.text}
-              </Text>
-              {item.scheduledTime && (
-                <Text style={styles.scheduledTime}>
-                  {format(new Date(item.scheduledTime), 'HH:mm', { locale: ru })}
-                </Text>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={() => deleteTodo(item.id)}
-            >
-              <Text style={styles.deleteButtonText}>×</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        renderItem={renderTodoItem}
       />
     </View>
   );
@@ -169,7 +200,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ddd',
   },
-  todoText: {
+  todoCheckbox: {
+    marginRight: 12,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxCompleted: {
+    backgroundColor: '#007AFF',
+  },
+  todoContent: {
     flex: 1,
   },
   todoTextContent: {
@@ -190,10 +236,5 @@ const styles = StyleSheet.create({
     height: 30,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  deleteButtonText: {
-    color: '#FF3B30',
-    fontSize: 24,
-    fontWeight: 'bold',
   },
 }); 
