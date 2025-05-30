@@ -1,15 +1,33 @@
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { format } from 'date-fns';
+import { ru } from 'date-fns/locale';
 import { StatusBar } from 'expo-status-bar';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTodoStore } from '../store/todoStore';
+import { setupNotifications } from '../utils/notifications';
 
 export default function App() {
   const [text, setText] = useState('');
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [scheduledTime, setScheduledTime] = useState<Date | undefined>();
   const { todos, addTodo, toggleTodo, deleteTodo } = useTodoStore();
 
-  const handleAddTodo = () => {
-    addTodo(text);
+  useEffect(() => {
+    setupNotifications();
+  }, []);
+
+  const handleAddTodo = async () => {
+    await addTodo(text, scheduledTime);
     setText('');
+    setScheduledTime(undefined);
+  };
+
+  const handleTimeChange = (event: any, selectedDate?: Date) => {
+    setShowTimePicker(false);
+    if (selectedDate) {
+      setScheduledTime(selectedDate);
+    }
   };
 
   return (
@@ -25,10 +43,28 @@ export default function App() {
           placeholder="Добавить новую задачу"
           placeholderTextColor="#666"
         />
+        <TouchableOpacity 
+          style={[styles.timeButton, scheduledTime && styles.timeButtonActive]} 
+          onPress={() => setShowTimePicker(true)}
+        >
+          <Text style={styles.timeButtonText}>
+            {scheduledTime ? format(scheduledTime, 'HH:mm', { locale: ru }) : '⏰'}
+          </Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.addButton} onPress={handleAddTodo}>
           <Text style={styles.addButtonText}>+</Text>
         </TouchableOpacity>
       </View>
+
+      {showTimePicker && (
+        <DateTimePicker
+          value={scheduledTime || new Date()}
+          mode="time"
+          is24Hour={true}
+          display="default"
+          onChange={handleTimeChange}
+        />
+      )}
 
       <FlatList
         data={todos}
@@ -47,6 +83,11 @@ export default function App() {
               >
                 {item.text}
               </Text>
+              {item.scheduledTime && (
+                <Text style={styles.scheduledTime}>
+                  {format(new Date(item.scheduledTime), 'HH:mm', { locale: ru })}
+                </Text>
+              )}
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.deleteButton}
@@ -89,6 +130,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ddd',
   },
+  timeButton: {
+    width: 50,
+    height: 50,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  timeButtonActive: {
+    backgroundColor: '#007AFF',
+  },
+  timeButtonText: {
+    fontSize: 20,
+    color: '#333',
+  },
   addButton: {
     width: 50,
     height: 50,
@@ -118,6 +175,11 @@ const styles = StyleSheet.create({
   todoTextContent: {
     fontSize: 16,
     color: '#333',
+  },
+  scheduledTime: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
   },
   completedTodo: {
     textDecorationLine: 'line-through',
