@@ -1,41 +1,15 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-
-interface Todo {
-  id: string;
-  text: string;
-  completed: boolean;
-}
+import { useTodoStore } from '../store/todoStore';
 
 export default function App() {
-  const [todos, setTodos] = useState<Todo[]>([]);
   const [text, setText] = useState('');
+  const { todos, addTodo, toggleTodo, deleteTodo } = useTodoStore();
 
-  const addTodo = () => {
-    if (text.trim().length === 0) return;
-    
-    setTodos([
-      ...todos,
-      {
-        id: Date.now().toString(),
-        text: text.trim(),
-        completed: false,
-      },
-    ]);
+  const handleAddTodo = () => {
+    addTodo(text);
     setText('');
-  };
-
-  const toggleTodo = (id: string) => {
-    setTodos(
-      todos.map((todo) =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo
-      )
-    );
-  };
-
-  const deleteTodo = (id: string) => {
-    setTodos(todos.filter((todo) => todo.id !== id));
   };
 
   return (
@@ -51,7 +25,7 @@ export default function App() {
           placeholder="Добавить новую задачу"
           placeholderTextColor="#666"
         />
-        <TouchableOpacity style={styles.addButton} onPress={addTodo}>
+        <TouchableOpacity style={styles.addButton} onPress={handleAddTodo}>
           <Text style={styles.addButtonText}>+</Text>
         </TouchableOpacity>
       </View>
