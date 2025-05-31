@@ -22,7 +22,7 @@ export default function App() {
   const [text, setText] = useState('');
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [scheduledTime, setScheduledTime] = useState<Date | undefined>();
-  const { todos, addTodo, toggleTodo } = useTodoStore();
+  const { todos, addTodo, toggleTodo, deleteTodo } = useTodoStore();
 
   useEffect(() => {
     setupNotifications();
@@ -64,6 +64,16 @@ export default function App() {
       ) : (
         <Ionicons name="ellipse-outline" size={28} color="#e0e0e0" />
       )}
+      <TouchableOpacity
+        style={styles.deleteButton}
+        onPress={(e) => {
+          e.stopPropagation && e.stopPropagation();
+          deleteTodo(item.id);
+        }}
+        activeOpacity={0.7}
+      >
+        <Ionicons name="trash-outline" size={24} color="#FF3B30" />
+      </TouchableOpacity>
     </TouchableOpacity>
   );
 
@@ -232,5 +242,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#90caf9',
     marginTop: 2,
+  },
+  deleteButton: {
+    marginLeft: 12,
+    padding: 4,
   },
 });
