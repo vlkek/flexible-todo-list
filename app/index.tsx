@@ -107,9 +107,13 @@ export default function App() {
             style={[styles.timeButton, scheduledTime && styles.timeButtonActive]}
             onPress={() => setShowTimePicker(true)}
           >
-            <Text style={styles.timeButtonText}>
-              {scheduledTime ? format(scheduledTime, 'HH:mm', { locale: ru }) : '⏰'}
-            </Text>
+            {scheduledTime ? (
+              <Text style={styles.timeButtonText}>
+                {format(scheduledTime, 'HH:mm', { locale: ru })}
+              </Text>
+            ) : (
+              <Ionicons name="alarm-outline" size={28} color="#2196f3" />
+            )}
           </TouchableOpacity>
         </View>
         <TouchableOpacity style={styles.fabGreen} onPress={handleAddTodo} activeOpacity={0.85}>
