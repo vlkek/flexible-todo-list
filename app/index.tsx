@@ -5,7 +5,16 @@ import { ru } from 'date-fns/locale';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { FlatList, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  FlatList,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Todo, useTodoStore } from '../store/todoStore';
 import { setupNotifications } from '../utils/notifications';
 
@@ -13,7 +22,7 @@ export default function App() {
   const [text, setText] = useState('');
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [scheduledTime, setScheduledTime] = useState<Date | undefined>();
-  const { todos, addTodo, toggleTodo, deleteTodo } = useTodoStore();
+  const { todos, addTodo, toggleTodo } = useTodoStore();
 
   useEffect(() => {
     setupNotifications();
@@ -41,13 +50,7 @@ export default function App() {
       activeOpacity={0.8}
     >
       <View style={{ flex: 1 }}>
-        <Text
-          style={[
-            styles.text,
-            item.completed && styles.textCompleted,
-          ]}
-          numberOfLines={1}
-        >
+        <Text style={[styles.text, item.completed && styles.textCompleted]} numberOfLines={1}>
           {item.text}
         </Text>
         {item.scheduledTime && (
@@ -66,50 +69,52 @@ export default function App() {
 
   return (
     <LinearGradient
-      colors={["#6ec6ff", "#2196f3"]}
+      colors={['#6ec6ff', '#2196f3']}
       style={[styles.gradient, { paddingBottom: Platform.OS === 'ios' ? 34 : 0 }]}
     >
-      <StatusBar style="light" />
-      <View style={styles.header}>
-        <Ionicons name="apps" size={28} color="#90caf9" style={{ marginRight: 8 }} />
-        <Text style={styles.title}>All Tasks</Text>
-      </View>
-      <FlatList
-        data={todos}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.list}
-        renderItem={renderTodoItem}
-        showsVerticalScrollIndicator={false}
-      />
-      <View style={styles.inputPanelBottom}>
-        <TextInput
-          style={styles.input}
-          value={text}
-          onChangeText={setText}
-          placeholder="Create new task"
-          placeholderTextColor="#b3e5fc"
+      <SafeAreaView style={{ flex: 1 }}>
+        <StatusBar style="light" />
+        <View style={styles.header}>
+          <Ionicons name="apps" size={28} color="#90caf9" style={{ marginRight: 8 }} />
+          <Text style={styles.title}>All Tasks</Text>
+        </View>
+        <FlatList
+          data={todos}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          renderItem={renderTodoItem}
+          showsVerticalScrollIndicator={false}
         />
-        <TouchableOpacity 
-          style={[styles.timeButton, scheduledTime && styles.timeButtonActive]} 
-          onPress={() => setShowTimePicker(true)}
-        >
-          <Text style={styles.timeButtonText}>
-            {scheduledTime ? format(scheduledTime, 'HH:mm', { locale: ru }) : '⏰'}
-          </Text>
+        <View style={styles.inputPanelBottom}>
+          <TextInput
+            style={styles.input}
+            value={text}
+            onChangeText={setText}
+            placeholder="Create new task"
+            placeholderTextColor="#b3e5fc"
+          />
+          <TouchableOpacity
+            style={[styles.timeButton, scheduledTime && styles.timeButtonActive]}
+            onPress={() => setShowTimePicker(true)}
+          >
+            <Text style={styles.timeButtonText}>
+              {scheduledTime ? format(scheduledTime, 'HH:mm', { locale: ru }) : '⏰'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+        <TouchableOpacity style={styles.fabGreen} onPress={handleAddTodo} activeOpacity={0.85}>
+          <Ionicons name="add" size={40} color="#fff" />
         </TouchableOpacity>
-      </View>
-      <TouchableOpacity style={styles.fabGreen} onPress={handleAddTodo} activeOpacity={0.85}>
-        <Ionicons name="add" size={40} color="#fff" />
-      </TouchableOpacity>
-      {showTimePicker && (
-        <DateTimePicker
-          value={scheduledTime || new Date()}
-          mode="time"
-          is24Hour={true}
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={handleTimeChange}
-        />
-      )}
+        {showTimePicker && (
+          <DateTimePicker
+            value={scheduledTime || new Date()}
+            mode="time"
+            is24Hour={true}
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={handleTimeChange}
+          />
+        )}
+      </SafeAreaView>
     </LinearGradient>
   );
 }
@@ -228,4 +233,4 @@ const styles = StyleSheet.create({
     color: '#90caf9',
     marginTop: 2,
   },
-}); 
+});
